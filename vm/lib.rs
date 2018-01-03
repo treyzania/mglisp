@@ -5,12 +5,45 @@ use std::rc::*;
 
 use std::collections::*;
 
+mod intrinsics;
+mod sexp;
+
+use sexp::*; // This `use` feels wrong.
+
 #[derive(Clone, Debug, Eq, PartialEq)]
-struct Env(HashMap<String, Rc<Atom>>);
+pub struct Env(HashMap<String, Rc<Atom>>);
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub enum LispFunction {
+    Lambda(Rc<Sexp>, Env), // the `Env` here is the local context of the function
+    Intrinsic(intrinsics::MgIntrinsic)
+}
+
+impl From<Sexp> for Atom {
+    fn from(s: Sexp) -> Atom {
+        use sexp::Sexp::*;
+        match s {
+            Null => Atom::Null,
+            Integer(i) => Atom::Integer(i),
+            ByteArray(b) => Atom::ByteArray(b),
+            Str(s) => Atom::Str(s),
+            Symbol(s) => Atom::Symbol(s),
+            List(mut l) => {
+                let len = l.len();
+                let mut v = Atom::Null;
+                for i in 0..len {
+                    // Build up the conses in reverse.
+                    v = Atom::Cons(Rc::new((l[len - i - 1].clone().into(), v)));
+                }
+                v
+            }
+        }
+    }
+}
 
 /// Some data value.
 #[derive(Clone, Eq, PartialEq, Debug)]
-enum Atom {
+pub enum Atom {
 
     /// Just nothing.
     Null,
@@ -24,14 +57,14 @@ enum Atom {
     /// UTF-8 string.
     Str(String),
 
-    /// Index into VM symbols table.
+    /// A symbol that's not a string.
     Symbol(String),
 
     /// A pairing of two values, probably an atom and another cons.
     Cons(Rc<(Atom, Atom)>),
 
-    /// Evaluation context thingy.
-    Closure(Box<Atom>, Env) // probably not the right way to represent this
+    /// Balls
+    Func(LispFunction)
 
 }
 
@@ -51,33 +84,12 @@ impl Env {
 
 }
 
-struct Closure {
-    context: Env,
-    expr: Atom // Probably a series of conses and things.
-}
-
 #[derive(Clone, Debug)]
 enum EvalError {
     Msg(String),
     Chain(Vec<EvalError>)
 }
 
-fn eval(expr: Rc<Atom>, env: &Env) -> Result<Rc<Atom>, EvalError> {
-
-    use self::Atom::*;
-
-    let e = expr.as_ref();
-
-    let val = match e.clone() {
-        Null => Null,
-        Integer(i) => Integer(i),
-        ByteArray(a) => ByteArray(a),
-        Str(s) => Str(s),
-        Symbol(s) => Symbol(s),
-        Cons(c) => Cons(c),
-        _ => return Err(EvalError::Msg("this didn't work".into()))
-    };
-
-    Ok(Rc::new(val))
-
+fn eval(func: LispFunction, env: Env) -> Atom {
+    unimplemented!(); // I changed the data model again and broke everything.
 }
