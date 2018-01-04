@@ -129,7 +129,7 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
                     let nenv: BindingMap = args
                         .iter()
                         .zip(names)
-                        .map(|(a, n)| (n.clone(), a.clone()))
+                        .map(|(a, n)| (n.clone(), a.clone())) // TODO Reduce all this cloning.
                         .collect();
 
                     // This is where all the hardcore magic happens.
