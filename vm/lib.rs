@@ -59,10 +59,6 @@ impl Env {
         self.bindings.insert(name, Rc::new(value));
     }
 
-    pub fn get_bindings(&self) -> BindingMap {
-        self.bindings.clone()
-    }
-
     pub fn compose(&self, top: &Env) -> Env {
         let mut dup = self.bindings.clone();
         for (k, v) in top.bindings.iter() {
