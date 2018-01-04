@@ -118,11 +118,14 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
 
                 },
                 Atom::Func(Intrinsic(idat)) => {
-                    let mut f: Box<FnMut(Vec<sexp::Sexp>, &mut Env) -> Result<Atom, EvalError>> = unimplemented!(); // basically get the thing inside idat.func
-                    match f(Vec::new(), env) { // Pass env in directly since intrinsics can modify it.
+
+                    // Similar thing to the above, just don't do any transformation.
+                    let args = v.iter().skip(1).map(|sx| sx.clone()).collect();
+                    match idat.func.as_ref()(args, env) {
                         Ok(a) => a,
-                        Err(e) => return Err(Chain(vec![Msg("error in intrinsic".into()), e]))
+                        Err(e) => return Err(Chain(vec![Msg(format!("error in intrinsic {}", idat.name)), e]))
                     }
+
                 },
                 _ => return Err(Msg("tried to call a non-function".into()))
             }

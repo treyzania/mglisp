@@ -10,7 +10,7 @@ use EvalError;
 #[derive(Clone)]
 pub struct MgIntrinsic {
     pub name: String,
-    pub func: Arc<Mutex<FnMut(Vec<sexp::Sexp>, &mut Env) -> Result<Atom, EvalError>>>
+    pub func: Arc<Fn(Vec<sexp::Sexp>, &mut Env) -> Result<Atom, EvalError>>
 }
 
 impl ::std::fmt::Debug for MgIntrinsic {
