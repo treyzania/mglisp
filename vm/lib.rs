@@ -84,7 +84,7 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
         Integer(i) => Atom::Integer(i),
         ByteArray(a) => Atom::ByteArray(a),
         Str(s) => Atom::Str(s),
-        Quote(sx) => unimplemented!(),
+        Symbol(s) => Atom::Symbol(s),
         List(ref v) => { // This is where the fun part of evaling works.
 
             // First we evaluate the first element so that we can figure out what we should do.
