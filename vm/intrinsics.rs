@@ -78,7 +78,7 @@ mod core {
 
         // This is where we actually mutate the environment.
         env.add_binding(binding, value);
-        
+
         Ok(Atom::Null)
 
     }

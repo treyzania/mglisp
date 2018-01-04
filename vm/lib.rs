@@ -52,7 +52,9 @@ pub enum Atom {
 
 impl Env {
     pub fn new() -> Env {
-        Env{bindings: BindingMap::new()}
+        Env {
+            bindings: BindingMap::new()
+        }
     }
 
     pub fn add_binding(&mut self, name: String, value: Atom) {
@@ -64,13 +66,17 @@ impl Env {
         for (k, v) in top.bindings.iter() {
             dup.insert(k.clone(), v.clone());
         }
-        Env{bindings:dup}
+        Env {
+            bindings:dup
+        }
     }
 }
 
 impl From<BindingMap> for Env {
     fn from(v: BindingMap) -> Env {
-        Env{bindings: v}
+        Env {
+            bindings: v
+        }
     }
 }
 
@@ -136,7 +142,7 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
                 _ => return Err(Msg("tried to call a non-function".into()))
             }
         },
-        _ => return Err(EvalError::Msg("unevaluatable S-expression".into()))
+        _ => return Err(Msg("unevaluatable S-expression".into()))
     };
 
     Ok(val)
