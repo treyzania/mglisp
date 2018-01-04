@@ -62,13 +62,19 @@ impl Env {
 
 }
 
+impl From<HashMap<String, Rc<Atom>>> for Env {
+    fn from(v: HashMap<String, Rc<Atom>>) -> Env {
+        Env(v)
+    }
+}
+
 #[derive(Clone, Debug)]
-enum EvalError {
+pub enum EvalError {
     Msg(String),
     Chain(Vec<EvalError>)
 }
 
-fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
+pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
 
     use sexp::Sexp::*;
     use self::LispFunction::*;
@@ -80,22 +86,42 @@ fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
         Str(s) => Atom::Str(s),
         Quote(sx) => unimplemented!(),
         List(ref v) => { // This is where the fun part of evaling works.
-            match eval(v[0].clone(), &mut env.clone())? {
+
+            // First we evaluate the first element so that we can figure out what we should do.
+            let func = eval(v[0].clone(), &mut env.clone())?;
+
+            // Depending on the type of function we have to do some more work.
+            match func {
                 Atom::Func(Lambda(tmplt, clos, names)) => {
 
+                    // First we have to
+                    // TODO Make this more f u n c t i o n a l.
                     let mut args = Vec::with_capacity(v.len() - 1);
-                    for sx in v {
+                    for sx in v.iter().skip(1) {
                         args.push(eval(sx.clone(), &mut env.clone())?);
                     }
 
-                    unimplemented!()
+                    // If they aren't the same length then report that.
+                    if args.len() != names.len() {
+                        return Err(Msg(format!("function expeced {} arguments, got {}", names.len(), args.len())));
+                    }
+
+                    // Now we have to compute the partial environment based on the arguments.
+                    let nenv: HashMap<String, Rc<Atom>> = args
+                        .iter()
+                        .zip(names)
+                        .map(|(a, n)| (n, Rc::new(a.clone())))
+                        .collect();
+
+                    // This is where all the hardcore magic happens.
+                    eval(tmplt.as_ref().clone(), &mut clos.compose(&nenv.into()))?
 
                 },
                 Atom::Func(Intrinsic(idat)) => {
                     let mut f: Box<FnMut(Vec<sexp::Sexp>, &mut Env) -> Result<Atom, EvalError>> = unimplemented!(); // basically get the thing inside idat.func
-                    match f(Vec::new(), env) {
+                    match f(Vec::new(), env) { // Pass env in directly since intrinsics can modify it.
                         Ok(a) => a,
-                        Err(e) => return Err(Chain(vec![EvalError::Msg("error in intrinsic".into()), e]))
+                        Err(e) => return Err(Chain(vec![Msg("error in intrinsic".into()), e]))
                     }
                 },
                 _ => return Err(Msg("tried to call a non-function".into()))
