@@ -39,6 +39,9 @@ pub enum Atom {
     /// UTF-8 string.
     Str(String),
 
+    /// A boolean value.
+    Boolean(bool),
+
     /// A symbol that's not a string.
     Symbol(String),
 
@@ -100,6 +103,7 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
         Integer(i) => Rc::new(Atom::Integer(i)),
         ByteArray(a) => Rc::new(Atom::ByteArray(a)),
         Str(s) => Rc::new(Atom::Str(s)),
+        Boolean(b) => Rc::new(Atom::Boolean(b)),
         Symbol(s) => match env.resolve(&s) {
             Some(v) => v,
             None => return Err(Msg(format!("unbound name {}", s)))

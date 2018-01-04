@@ -14,6 +14,9 @@ pub enum Sexp {
     /// UTF-8 string.
     Str(String),
 
+    /// A boolean value
+    Boolean(bool),
+
     /// A symbol that's not a string.
     Symbol(String),
 
