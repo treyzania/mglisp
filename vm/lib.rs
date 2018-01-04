@@ -10,8 +10,12 @@ mod sexp;
 
 use sexp::*; // This `use` feels wrong.
 
+type BindingMap = HashMap<String, Rc<Atom>>;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Env(HashMap<String, Rc<Atom>>);
+pub struct Env {
+    bindings: BindingMap,
+}
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum LispFunction {
@@ -47,24 +51,30 @@ pub enum Atom {
 }
 
 impl Env {
-
     pub fn new() -> Env {
-        Env(HashMap::new())
+        Env{bindings: BindingMap::new()}
+    }
+
+    pub fn add_binding(&mut self, name: String, value: Atom) {
+        self.bindings.insert(name, Rc::new(value));
+    }
+
+    pub fn get_bindings(&self) -> BindingMap {
+        self.bindings.clone()
     }
 
     pub fn compose(&self, top: &Env) -> Env {
-        let mut dup = self.0.clone();
-        for (k, v) in top.0.iter() {
+        let mut dup = self.bindings.clone();
+        for (k, v) in top.bindings.iter() {
             dup.insert(k.clone(), v.clone());
         }
-        Env(dup)
+        Env{bindings:dup}
     }
-
 }
 
-impl From<HashMap<String, Rc<Atom>>> for Env {
-    fn from(v: HashMap<String, Rc<Atom>>) -> Env {
-        Env(v)
+impl From<BindingMap> for Env {
+    fn from(v: BindingMap) -> Env {
+        Env{bindings: v}
     }
 }
 
@@ -107,7 +117,7 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
                     }
 
                     // Now we have to compute the partial environment based on the arguments.
-                    let nenv: HashMap<String, Rc<Atom>> = args
+                    let nenv: BindingMap = args
                         .iter()
                         .zip(names)
                         .map(|(a, n)| (n, Rc::new(a.clone())))
