@@ -15,7 +15,7 @@ pub enum Sexp {
     Str(String),
 
     /// A symbol that's not a string.
-    Symbol(String),
+    Quote(Box<Sexp>),
 
     /// List of S-expresions.
     List(Vec<Sexp>),

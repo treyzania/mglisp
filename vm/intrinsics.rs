@@ -1,12 +1,16 @@
 use std::cell::*;
 use std::sync::*;
 
+use sexp;
+
 use Atom;
+use Env;
+use EvalError;
 
 #[derive(Clone)]
 pub struct MgIntrinsic {
-    name: String,
-    func: Arc<Mutex<FnMut(Vec<Atom>) -> Atom>>
+    pub name: String,
+    pub func: Arc<Mutex<FnMut(Vec<sexp::Sexp>, &mut Env) -> Result<Atom, EvalError>>>
 }
 
 impl ::std::fmt::Debug for MgIntrinsic {

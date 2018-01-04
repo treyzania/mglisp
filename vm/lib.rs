@@ -15,30 +15,8 @@ pub struct Env(HashMap<String, Rc<Atom>>);
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum LispFunction {
-    Lambda(Rc<Sexp>, Env), // the `Env` here is the local context of the function
+    Lambda(Rc<Sexp>, Env, Vec<String>), // the `Env` here is the local context of the function
     Intrinsic(intrinsics::MgIntrinsic)
-}
-
-impl From<Sexp> for Atom {
-    fn from(s: Sexp) -> Atom {
-        use sexp::Sexp::*;
-        match s {
-            Null => Atom::Null,
-            Integer(i) => Atom::Integer(i),
-            ByteArray(b) => Atom::ByteArray(b),
-            Str(s) => Atom::Str(s),
-            Symbol(s) => Atom::Symbol(s),
-            List(mut l) => {
-                let len = l.len();
-                let mut v = Atom::Null;
-                for i in 0..len {
-                    // Build up the conses in reverse.
-                    v = Atom::Cons(Rc::new((l[len - i - 1].clone().into(), v)));
-                }
-                v
-            }
-        }
-    }
 }
 
 /// Some data value.
@@ -90,6 +68,42 @@ enum EvalError {
     Chain(Vec<EvalError>)
 }
 
-fn eval(func: LispFunction, env: Env) -> Atom {
-    unimplemented!(); // I changed the data model again and broke everything.
+fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
+
+    use sexp::Sexp::*;
+    use self::LispFunction::*;
+    use self::EvalError::*;
+    let val: Atom = match sexp {
+        Null => Atom::Null,
+        Integer(i) => Atom::Integer(i),
+        ByteArray(a) => Atom::ByteArray(a),
+        Str(s) => Atom::Str(s),
+        Quote(sx) => unimplemented!(),
+        List(ref v) => { // This is where the fun part of evaling works.
+            match eval(v[0].clone(), &mut env.clone())? {
+                Atom::Func(Lambda(tmplt, clos, names)) => {
+
+                    let mut args = Vec::with_capacity(v.len() - 1);
+                    for sx in v {
+                        args.push(eval(sx.clone(), &mut env.clone())?);
+                    }
+
+                    unimplemented!()
+
+                },
+                Atom::Func(Intrinsic(idat)) => {
+                    let mut f: Box<FnMut(Vec<sexp::Sexp>, &mut Env) -> Result<Atom, EvalError>> = unimplemented!(); // basically get the thing inside idat.func
+                    match f(Vec::new(), env) {
+                        Ok(a) => a,
+                        Err(e) => return Err(Chain(vec![EvalError::Msg("error in intrinsic".into()), e]))
+                    }
+                },
+                _ => return Err(Msg("tried to call a non-function".into()))
+            }
+        },
+        _ => return Err(EvalError::Msg("unevaluatable S-expression".into()))
+    };
+
+    Ok(val)
+
 }
