@@ -57,8 +57,8 @@ impl Env {
         }
     }
 
-    pub fn add_binding(&mut self, name: String, value: Atom) {
-        self.bindings.insert(name, Rc::new(value));
+    pub fn add_binding(&mut self, name: String, value: Rc<Atom>) {
+        self.bindings.insert(name, value);
     }
 
     pub fn compose(&self, top: &Env) -> Env {
@@ -67,8 +67,12 @@ impl Env {
             dup.insert(k.clone(), v.clone());
         }
         Env {
-            bindings:dup
+            bindings: dup
         }
+    }
+
+    pub fn resolve(&self, name: &String) -> Option<Rc<Atom>> {
+        self.bindings.get(name).cloned()
     }
 }
 
@@ -86,25 +90,28 @@ pub enum EvalError {
     Chain(Vec<EvalError>)
 }
 
-pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
+pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
 
     use sexp::Sexp::*;
     use self::LispFunction::*;
     use self::EvalError::*;
-    let val: Atom = match sexp {
-        Null => Atom::Null,
-        Integer(i) => Atom::Integer(i),
-        ByteArray(a) => Atom::ByteArray(a),
-        Str(s) => Atom::Str(s),
-        Symbol(s) => Atom::Symbol(s),
+    let val: Rc<Atom> = match sexp {
+        Null => Rc::new(Atom::Null),
+        Integer(i) => Rc::new(Atom::Integer(i)),
+        ByteArray(a) => Rc::new(Atom::ByteArray(a)),
+        Str(s) => Rc::new(Atom::Str(s)),
+        Symbol(s) => match env.resolve(&s) {
+            Some(v) => v,
+            None => return Err(Msg(format!("unbound name {}", s)))
+        },
         List(ref v) => { // This is where the fun part of evaling works.
 
             // First we evaluate the first element so that we can figure out what we should do.
             let func = eval(v[0].clone(), &mut env.clone())?;
 
             // Depending on the type of function we have to do some more work.
-            match func {
-                Atom::Func(Lambda(tmplt, clos, names)) => {
+            match func.as_ref() {
+                &Atom::Func(Lambda(ref tmplt, ref clos, ref names)) => {
 
                     // First we have to
                     // TODO Make this more f u n c t i o n a l.
@@ -122,14 +129,14 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Atom, EvalError> {
                     let nenv: BindingMap = args
                         .iter()
                         .zip(names)
-                        .map(|(a, n)| (n, Rc::new(a.clone())))
+                        .map(|(a, n)| (n.clone(), a.clone()))
                         .collect();
 
                     // This is where all the hardcore magic happens.
                     eval(tmplt.as_ref().clone(), &mut clos.compose(&nenv.into()))?
 
                 },
-                Atom::Func(Intrinsic(idat)) => {
+                &Atom::Func(Intrinsic(ref idat)) => {
 
                     // Similar thing to the above, just don't do any transformation.
                     let args = v.iter().skip(1).map(|sx| sx.clone()).collect();
