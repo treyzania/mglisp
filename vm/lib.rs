@@ -93,35 +93,43 @@ pub enum EvalError {
     Chain(Vec<EvalError>)
 }
 
-pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
 
     use sexp::Sexp::*;
     use self::LispFunction::*;
     use self::EvalError::*;
     let val: Rc<Atom> = match sexp {
-        Null => Rc::new(Atom::Null),
-        Integer(i) => Rc::new(Atom::Integer(i)),
-        ByteArray(a) => Rc::new(Atom::ByteArray(a)),
-        Str(s) => Rc::new(Atom::Str(s)),
-        Boolean(b) => Rc::new(Atom::Boolean(b)),
-        Symbol(s) => match env.resolve(&s) {
+
+        // Normal data conversions.
+        &Null => Rc::new(Atom::Null),
+        &Integer(i) => Rc::new(Atom::Integer(i)),
+        &ByteArray(ref a) => Rc::new(Atom::ByteArray(a.clone())),
+        &Str(ref s) => Rc::new(Atom::Str(s.clone())),
+        &Boolean(b) => Rc::new(Atom::Boolean(b)),
+
+        // Symbols are how variable binding works, outside of `quote` forms.
+        &Symbol(ref s) => match env.resolve(&s) {
             Some(v) => v,
             None => return Err(Msg(format!("unbound name {}", s)))
         },
-        List(ref v) => { // This is where the fun part of evaling works.
+
+        // "Lists" in S-expressions are how function calls happen.  The first argument is the actual function being applied.
+        &List(ref v) => { // This is where the fun part of evaling works.
 
             // First we evaluate the first element so that we can figure out what we should do.
-            let func = eval(v[0].clone(), &mut env.clone())?;
+            let func = eval(&v[0], &mut env.clone())?;
 
             // Depending on the type of function we have to do some more work.
             match func.as_ref() {
+
+                // This is where most of the function calls will be.
                 &Atom::Func(Lambda(ref tmplt, ref clos, ref names)) => {
 
                     // First we have to
                     // TODO Make this more f u n c t i o n a l.
                     let mut args = Vec::with_capacity(v.len() - 1);
                     for sx in v.iter().skip(1) {
-                        args.push(eval(sx.clone(), &mut env.clone())?);
+                        args.push(eval(sx, &mut env.clone())?);
                     }
 
                     // If they aren't the same length then report that.
@@ -137,14 +145,16 @@ pub fn eval(sexp: Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
                         .collect();
 
                     // This is where all the hardcore magic happens.
-                    eval(tmplt.as_ref().clone(), &mut clos.compose(&nenv.into()))?
+                    eval(tmplt.as_ref(), &mut clos.compose(&nenv.into()))?
 
                 },
+
+                // Intrinsic functions are how we call out and do other special things outside the sandbox.
                 &Atom::Func(Intrinsic(ref idat)) => {
 
                     // Similar thing to the above, just don't do any transformation.
-                    let args = v.iter().skip(1).map(|sx| sx.clone()).collect();
-                    match idat.func.as_ref()(args, env) {
+                    let args = v.iter().map(|sx| sx.clone()).collect();
+                    match idat.func.as_ref()(&args, env) {
                         Ok(a) => a,
                         Err(e) => return Err(Chain(vec![Msg(format!("error in intrinsic {}", idat.name)), e]))
                     }

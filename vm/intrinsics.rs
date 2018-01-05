@@ -8,7 +8,7 @@ use Atom;
 use Env;
 use EvalError;
 
-type IntrinsicImpl = Fn(Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
+type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
 
 #[derive(Clone)]
 pub struct MgIntrinsic {
@@ -48,17 +48,17 @@ mod core {
         Err(EvalError::Msg(String::from(err)))
     }
 
-    pub fn mgi_lambda(args: Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+    pub fn mgi_lambda(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
 
         if args.len() != 2 {
             return eval_error("invalid form for lambda: needs 2 expressions");
         }
 
         let mut names = Vec::new();
-        match args[0].clone() {
-            Sexp::List(list) => for sexp in list {
+        match &args[0] {
+            &Sexp::List(ref list) => for sexp in list {
                 match sexp {
-                    Sexp::Symbol(s) => names.push(s),
+                    &Sexp::Symbol(ref s) => names.push(s.clone()),
                     _ => return eval_error("invalid form for lambda: malformed argument names"),
                 }
             },
@@ -69,18 +69,18 @@ mod core {
 
     }
 
-    pub fn mgi_define(args: Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+    pub fn mgi_define(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
 
         if args.len() != 2 {
             return eval_error("invalid form for define: needs 2 expressions");
         }
 
-        let binding = match args[0].clone() {
-            Sexp::Symbol(s) => s,
+        let binding = match &args[0] {
+            &Sexp::Symbol(ref s) => s.clone(),
             _ => return eval_error("invalid form for define: first argument is not symbol"),
         };
 
-        let value = eval(args[1].clone(), &mut env.clone())?;
+        let value = eval(&args[1], &mut env.clone())?;
 
         // This is where we actually mutate the environment.
         env.add_binding(binding, value);
@@ -89,20 +89,20 @@ mod core {
 
     }
 
-    pub fn mgi_if(args: Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+    pub fn mgi_if(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
 
         if args.len() != 3 {
             return eval_error("invalid form for if: needs 3 expressions");
         }
 
-        let cond = match eval(args[0].clone(), env) {
+        let cond = match eval(&args[0], env) {
             Ok(v) => v,
             e @ Err(_) => return e
         };
 
         match cond.as_ref() {
-            &Atom::Boolean(true) => eval(args[1].clone(), env),
-            &Atom::Boolean(false) => eval(args[2].clone(), env),
+            &Atom::Boolean(true) => eval(&args[1], env),
+            &Atom::Boolean(false) => eval(&args[2], env),
             _ => return eval_error("conditional expression in if is non-boolean")
         }
 
