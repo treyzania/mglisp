@@ -43,7 +43,7 @@ pub enum Atom {
     Symbol(String),
 
     /// A pairing of two values, probably an atom and another cons.
-    Cons(Rc<(Atom, Atom)>),
+    Cons(Rc<Atom>, Rc<Atom>),
 
     /// Balls
     Func(LispFunction)
@@ -90,6 +90,7 @@ pub enum EvalError {
     Chain(Vec<EvalError>)
 }
 
+#[allow(unreachable_patterns)]
 pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
 
     use sexp::Sexp::*;
