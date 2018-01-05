@@ -1,12 +1,11 @@
-use std::cell::*;
 use std::rc::*;
 use std::sync::*;
 
 use sexp::Sexp;
 
-use Atom;
-use Env;
-use EvalError;
+use eval::Atom;
+use eval::Env;
+use eval::EvalError;
 
 type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
 
@@ -18,8 +17,7 @@ pub struct MgIntrinsic {
 
 impl ::std::fmt::Debug for MgIntrinsic {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> Result<(), ::std::fmt::Error> {
-        f.write_str(format!("[intrinsic {}]", self.name).as_str());
-        Ok(())
+        write!(f, "[intrinsic {}]", self.name)
     }
 }
 
@@ -31,17 +29,13 @@ impl PartialEq for MgIntrinsic {
 
 impl Eq for MgIntrinsic {}
 
+#[allow(unused)]
 mod core {
 
     use std::rc::*;
 
+    use eval::{Atom, Env, eval, EvalError, LispFunction};
     use sexp::Sexp;
-
-    use Atom;
-    use LispFunction;
-    use Env;
-    use EvalError;
-    use eval;
 
     #[inline]
     fn eval_error(err: &str) -> Result<Rc<Atom>, EvalError> {

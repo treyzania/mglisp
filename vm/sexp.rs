@@ -1,3 +1,6 @@
+
+#![allow(unused)]
+
 /// Some data value.
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum Sexp {
