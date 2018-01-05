@@ -1,4 +1,6 @@
 
+#![allow(dead_code)]
+
 use std::rc::*;
 use std::collections::*;
 
