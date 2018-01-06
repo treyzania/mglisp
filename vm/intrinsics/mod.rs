@@ -9,6 +9,7 @@ use eval::EvalError;
 
 mod core;
 mod lists;
+mod math;
 
 type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
 
