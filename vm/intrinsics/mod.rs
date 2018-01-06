@@ -10,6 +10,7 @@ use eval::EvalError;
 mod core;
 mod lists;
 mod math;
+mod string;
 
 type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
 
