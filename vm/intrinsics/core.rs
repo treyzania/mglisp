@@ -53,7 +53,6 @@ pub fn mgi_define(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError
 
 }
 
-
 pub fn mgi_if(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
 
     if args.len() != 3 {
@@ -69,6 +68,47 @@ pub fn mgi_if(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
         &Atom::Boolean(true) => eval(&args[1], env),
         &Atom::Boolean(false) => eval(&args[2], env),
         _ => return intrinsic_error("conditional expression in if is non-boolean")
+    }
+
+}
+
+pub fn mgi_typeof(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+
+    use eval::Atom::*;
+
+    if args.len() != 1 {
+        return intrinsic_error("typeof takes 1 argument");
+    }
+
+    // TODO Does this need to be cloned?
+    Ok(Rc::new(Symbol(match (eval(&args[0], &mut env.clone())?).as_ref() {
+        &Null => "null",
+        &Integer(_) => "integer",
+        &ByteArray(_) => "bytearray",
+        &Str(_) => "str",
+        &Boolean(_) => "bool",
+        &Symbol(_) => "symbol",
+        &Cons(_, _) => "cons",
+        &Func(_) => "function"
+    }.into())))
+
+}
+
+pub fn mgi_begin(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+
+    let mut last = None;
+
+    /*
+     * We just have to evaluate each of the entries in order.  Using the same env because that's
+     * just how the semantics of `begin` works.
+     */
+    for i in args {
+        last = Some(eval(i, env)?);
+    }
+
+    match last {
+        Some(v) => Ok(v),
+        None => Ok(Rc::new(Atom::Null))
     }
 
 }
