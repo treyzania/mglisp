@@ -29,7 +29,8 @@ pub fn mgi_lambda(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError
         _ => return intrinsic_error("invalid form for lambda, first argument not list"),
     };
 
-    Ok(Rc::new(Atom::Func(LispFunction::Lambda(Rc::new(args[1].clone()), env.clone(), names))))
+    // TODO Make this pretty to read.
+    Ok(Rc::new(Atom::Func(Box::new(LispFunction::Lambda(Rc::new(args[1].clone()), env.clone(), names)))))
 
 }
 

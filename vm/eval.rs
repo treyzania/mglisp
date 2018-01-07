@@ -45,8 +45,8 @@ pub enum Atom {
     /// A pairing of two values, probably an atom and another cons.
     Cons(Rc<Atom>, Rc<Atom>),
 
-    /// Balls
-    Func(LispFunction)
+    /// Callable functions.  In a `Box` to take up less space, as they're somewhat larger than we want them to be.
+    Func(Box<LispFunction>)
 
 }
 
@@ -130,55 +130,71 @@ pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
             None => return Err(Msg(format!("unbound name {}", s)))
         },
 
-        // "Lists" in S-expressions are how function calls happen.  The first argument is the actual function being applied.
-        &List(ref v) => { // This is where the fun part of evaling works.
+        /*
+         * "Lists" in S-expressions are how function calls happen.  The first argument is the
+         * actual function being applied.  This is where the fun part of evaling happens!
+         */
+        &List(ref v) => match eval(&v[0], &mut env.clone()) {
 
-            // First we evaluate the first element so that we can figure out what we should do.
-            let func = eval(&v[0], &mut env.clone())?;
+            Ok(r) => {
 
-            // Depending on the type of function we have to do some more work.
-            match func.as_ref() {
+                /*
+                 * First we evaluate the first element so that we can figure out what we should do, and
+                 * if it matches, we figure out which kind of function it is.
+                 */
+                if let &Atom::Func(ref fb) = r.as_ref() {
 
-                // This is where most of the function calls will be.
-                &Atom::Func(Lambda(ref tmplt, ref clos, ref names)) => {
+                    match fb.as_ref() {
 
-                    // First we have to
-                    // TODO Make this more f u n c t i o n a l.
-                    let mut args = Vec::with_capacity(v.len() - 1);
-                    for sx in v.iter().skip(1) {
-                        args.push(eval(sx, &mut env.clone())?);
+                        // Lambdas are for normal functions defined within the engine.
+                        &Lambda(ref tmplt, ref clos, ref names) => {
+
+                            // First we have to
+                            // TODO Make this more f u n c t i o n a l.
+                            let mut args = Vec::with_capacity(v.len() - 1);
+                            for sx in v.iter().skip(1) {
+                                args.push(eval(sx, &mut env.clone())?);
+                            }
+
+                            // If they aren't the same length then report that.
+                            if args.len() != names.len() {
+                                return Err(Msg(format!("function expeced {} arguments, got {}", names.len(), args.len())));
+                            }
+
+                            // Now we have to compute the partial environment based on the arguments.
+                            let nenv: BindingMap = args
+                                .iter()
+                                .zip(names)
+                                .map(|(a, n)| (n.clone(), a.clone())) // TODO Reduce all this cloning.
+                                .collect();
+
+                            // This is where all the hardcore magic happens.
+                            eval(tmplt.as_ref(), &mut clos.compose(&nenv.into()))?
+
+                        },
+
+                        // Instrinsics are the things that actually reach out and do magic things.
+                        &Intrinsic(ref idat) => {
+
+                            // Similar thing to the above, just don't do any transformation.
+                            let args = v.iter().map(|sx| sx.clone()).collect();
+                            match idat.func.as_ref()(&args, env) {
+                                Ok(a) => a,
+                                Err(e) => return Err(Chain(vec![Msg(format!("error in intrinsic {}", idat.name)), e]))
+                            }
+
+                        }
+
                     }
 
-                    // If they aren't the same length then report that.
-                    if args.len() != names.len() {
-                        return Err(Msg(format!("function expeced {} arguments, got {}", names.len(), args.len())));
-                    }
+                } else {
+                    return Err(Msg("tried to call a non-function".into()))
+                }
 
-                    // Now we have to compute the partial environment based on the arguments.
-                    let nenv: BindingMap = args
-                        .iter()
-                        .zip(names)
-                        .map(|(a, n)| (n.clone(), a.clone())) // TODO Reduce all this cloning.
-                        .collect();
+            },
 
-                    // This is where all the hardcore magic happens.
-                    eval(tmplt.as_ref(), &mut clos.compose(&nenv.into()))?
+            Err(e) => return Err(e)
 
-                },
-
-                // Intrinsic functions are how we call out and do other special things outside the sandbox.
-                &Atom::Func(Intrinsic(ref idat)) => {
-
-                    // Similar thing to the above, just don't do any transformation.
-                    let args = v.iter().map(|sx| sx.clone()).collect();
-                    match idat.func.as_ref()(&args, env) {
-                        Ok(a) => a,
-                        Err(e) => return Err(Chain(vec![Msg(format!("error in intrinsic {}", idat.name)), e]))
-                    }
-
-                },
-                _ => return Err(Msg("tried to call a non-function".into()))
-            }
         },
         _ => return Err(Msg("unevaluatable S-expression".into()))
     };
