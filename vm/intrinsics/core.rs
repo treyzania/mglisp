@@ -112,3 +112,11 @@ pub fn mgi_begin(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError>
     }
 
 }
+
+pub fn mgi_hard_clone(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+    if args.len() != 1 {
+        intrinsic_error("invalid form for hardclone, needs 1 expression")
+    } else {
+        eval(&args[0], env).map(|v| v.as_ref().hard_clone())
+    }
+}

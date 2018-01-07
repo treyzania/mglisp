@@ -50,6 +50,25 @@ pub enum Atom {
 
 }
 
+impl Atom {
+
+    /// Returns a new, exact, but seperate copy of the atom.
+    pub fn hard_clone(&self) -> Rc<Atom> {
+        use self::Atom::*;
+        match self {
+            &Null => Rc::new(Null),
+            &Integer(i) => Rc::new(Integer(i)),
+            &ByteArray(ref a) => Rc::new(ByteArray(a.clone())),
+            &Str(ref s) => Rc::new(Str(s.clone())),
+            &Boolean(b) => Rc::new(Boolean(b)),
+            &Symbol(ref s) => Rc::new(Symbol(s.clone())),
+            &Cons(ref l, ref r) => Rc::new(Cons(l.hard_clone(), r.hard_clone())),
+            &Func(ref f) => Rc::new(Func(f.clone()))
+        }
+    }
+
+}
+
 impl Env {
     pub fn new() -> Env {
         Env {
