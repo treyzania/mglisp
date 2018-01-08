@@ -7,17 +7,27 @@ use eval::Atom;
 use eval::Env;
 use eval::EvalError;
 
-mod core;
-mod lists;
-mod math;
-mod string;
+pub mod core;
+pub mod lists;
+pub mod math;
+pub mod string;
 
-type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
+pub type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
 
 #[derive(Clone)]
 pub struct MgIntrinsic {
     pub name: String,
     pub func: Arc<IntrinsicImpl>
+}
+
+impl MgIntrinsic {
+    #[allow(unreachable_code)]
+    pub fn new(name: String, _func: &IntrinsicImpl) -> MgIntrinsic {
+        MgIntrinsic {
+            name: name,
+            func: unimplemented!() // getting the &IntrinsicImpl in the arc as not a reference is hard, do it later
+        }
+    }
 }
 
 impl ::std::fmt::Debug for MgIntrinsic {
