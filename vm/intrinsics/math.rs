@@ -10,9 +10,9 @@ use std::rc::*;
 use eval::*;
 use intrinsics::*;
 
-use eval::Atom::*;
+use eval::LispValue::*;
 
-pub fn mgi_plus(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn mgi_plus(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     if args.len() != 2 {
         return intrinsic_error("invalid form for '+', needs 2 expressions");
@@ -31,7 +31,7 @@ pub fn mgi_plus(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> 
 
 }
 
-pub fn mgi_subtract(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn mgi_subtract(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     if args.len() != 2 {
         return intrinsic_error("invalid form for '-', needs 2 expressions");
@@ -50,7 +50,7 @@ pub fn mgi_subtract(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalErr
 
 }
 
-pub fn mgi_multiply(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn mgi_multiply(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     if args.len() != 2 {
         return intrinsic_error("invalid form for '*', needs 2 expressions");
@@ -69,7 +69,7 @@ pub fn mgi_multiply(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalErr
 
 }
 
-pub fn mgi_divide(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn mgi_divide(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     if args.len() != 2 {
         return intrinsic_error("invalid form for '/', needs 2 expressions");

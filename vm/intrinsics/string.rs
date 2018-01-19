@@ -10,9 +10,9 @@ use std::rc::*;
 use eval::*;
 use intrinsics::*;
 
-use eval::Atom::*;
+use eval::LispValue::*;
 
-pub fn mgi_str_len(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn mgi_str_len(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     if args.len() != 1 {
         return intrinsic_error("str-len takes 1 argument");
@@ -26,7 +26,7 @@ pub fn mgi_str_len(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalErro
 
 }
 
-pub fn mgi_str_app(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn mgi_str_app(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     if args.len() != 2 {
         return intrinsic_error("str-app takes 2 arguments");

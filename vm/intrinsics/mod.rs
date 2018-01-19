@@ -3,7 +3,7 @@ use std::sync::*;
 
 use sexp::Sexp;
 
-use eval::Atom;
+use eval::LispValue;
 use eval::Env;
 use eval::EvalError;
 
@@ -12,7 +12,7 @@ pub mod lists;
 pub mod math;
 pub mod string;
 
-pub type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<Atom>, EvalError>;
+pub type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<LispValue>, EvalError>;
 
 #[derive(Clone)]
 pub struct MgIntrinsic {
@@ -45,6 +45,6 @@ impl PartialEq for MgIntrinsic {
 impl Eq for MgIntrinsic {}
 
 #[inline]
-pub fn intrinsic_error(err: &str) -> Result<Rc<Atom>, EvalError> {
+pub fn intrinsic_error(err: &str) -> Result<Rc<LispValue>, EvalError> {
     Err(EvalError::Msg(format!("error: {}", err)))
 }

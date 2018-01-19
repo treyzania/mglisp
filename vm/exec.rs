@@ -6,14 +6,14 @@ use std::sync::*;
 use std::collections::*;
 
 use eval;
-use eval::{Atom, LispFunction};
+use eval::{LispValue, LispFunction};
 use sexp;
 use intrinsics::{self, MgIntrinsic, IntrinsicImpl};
 
 #[derive(Clone)]
 pub struct LispProgram {
     prelude: bool,
-    env: HashMap<String, Rc<Atom>>
+    env: HashMap<String, Rc<LispValue>>
 }
 
 impl LispProgram {
@@ -38,11 +38,11 @@ impl LispProgram {
     fn with_function(mut self, name: &str, func: &IntrinsicImpl) -> LispProgram {
         self.env.insert(
             String::from(name),
-            Rc::new(Atom::Func(Box::new(LispFunction::Intrinsic(MgIntrinsic::new(String::from(name), func))))));
+            Rc::new(LispValue::Func(Box::new(LispFunction::Intrinsic(MgIntrinsic::new(String::from(name), func))))));
         self
     }
 
-    fn exec(self, sexp: Box<sexp::Sexp>) -> Result<Rc<Atom>, eval::EvalError> {
+    fn exec(self, sexp: Box<sexp::Sexp>) -> Result<Rc<LispValue>, eval::EvalError> {
         unimplemented!()
     }
 

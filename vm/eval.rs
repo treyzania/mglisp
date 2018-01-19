@@ -7,7 +7,7 @@ use std::collections::*;
 use intrinsics;
 use sexp::Sexp;
 
-type BindingMap = HashMap<String, Rc<Atom>>;
+type BindingMap = HashMap<String, Rc<LispValue>>;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Env {
@@ -22,7 +22,7 @@ pub enum LispFunction {
 
 /// Some data value.
 #[derive(Clone, Eq, PartialEq, Debug)]
-pub enum Atom {
+pub enum LispValue {
 
     /// Just nothing.
     Null,
@@ -42,19 +42,19 @@ pub enum Atom {
     /// A symbol that's not a string.
     Symbol(String),
 
-    /// A pairing of two values, probably an atom and another cons.
-    Cons(Rc<Atom>, Rc<Atom>),
+    /// A pairing of two values, probably an LispValue and another cons.
+    Cons(Rc<LispValue>, Rc<LispValue>),
 
     /// Callable functions.  In a `Box` to take up less space, as they're somewhat larger than we want them to be.
     Func(Box<LispFunction>)
 
 }
 
-impl Atom {
+impl LispValue {
 
-    /// Returns a new, exact, but seperate copy of the atom.
-    pub fn hard_clone(&self) -> Rc<Atom> {
-        use self::Atom::*;
+    /// Returns a new, exact, but seperate copy of the LispValue.
+    pub fn hard_clone(&self) -> Rc<LispValue> {
+        use self::LispValue::*;
         match self {
             &Null => Rc::new(Null),
             &Integer(i) => Rc::new(Integer(i)),
@@ -76,7 +76,7 @@ impl Env {
         }
     }
 
-    pub fn add_binding(&mut self, name: String, value: Rc<Atom>) {
+    pub fn add_binding(&mut self, name: String, value: Rc<LispValue>) {
         self.bindings.insert(name, value);
     }
 
@@ -90,7 +90,7 @@ impl Env {
         }
     }
 
-    pub fn resolve(&self, name: &String) -> Option<Rc<Atom>> {
+    pub fn resolve(&self, name: &String) -> Option<Rc<LispValue>> {
         self.bindings.get(name).cloned()
     }
 }
@@ -110,19 +110,19 @@ pub enum EvalError {
 }
 
 #[allow(unreachable_patterns)]
-pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
+pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     use sexp::Sexp::*;
     use self::LispFunction::*;
     use self::EvalError::*;
-    let val: Rc<Atom> = match sexp {
+    let val: Rc<LispValue> = match sexp {
 
         // Normal data conversions.
-        &Null => Rc::new(Atom::Null),
-        &Integer(i) => Rc::new(Atom::Integer(i)),
-        &ByteArray(ref a) => Rc::new(Atom::ByteArray(a.clone())),
-        &Str(ref s) => Rc::new(Atom::Str(s.clone())),
-        &Boolean(b) => Rc::new(Atom::Boolean(b)),
+        &Null => Rc::new(LispValue::Null),
+        &Integer(i) => Rc::new(LispValue::Integer(i)),
+        &ByteArray(ref a) => Rc::new(LispValue::ByteArray(a.clone())),
+        &Str(ref s) => Rc::new(LispValue::Str(s.clone())),
+        &Boolean(b) => Rc::new(LispValue::Boolean(b)),
 
         // Symbols are how variable binding works, outside of `quote` forms.
         &Symbol(ref s) => match env.resolve(&s) {
@@ -142,7 +142,7 @@ pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<Atom>, EvalError> {
                  * First we evaluate the first element so that we can figure out what we should do, and
                  * if it matches, we figure out which kind of function it is.
                  */
-                if let &Atom::Func(ref fb) = r.as_ref() {
+                if let &LispValue::Func(ref fb) = r.as_ref() {
 
                     match fb.as_ref() {
 
