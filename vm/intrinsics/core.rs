@@ -34,6 +34,17 @@ pub fn mgi_lambda(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, Eval
 
 }
 
+pub fn mgi_variadic_lambda(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
+
+    if args.len() != 1 {
+        return intrinsic_error("invalid form for vlambda, needs 1 expression");
+    }
+
+    // Interestingly, this is even simpler than the non-variadic one.  Although the line is longer.
+    Ok(Rc::new(LispValue::Func(Box::new(LispFunction::VariadicLambda(Rc::new(args[1].clone()), env.clone())))))
+
+}
+
 pub fn mgi_define(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
     if args.len() != 2 {

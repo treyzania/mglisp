@@ -17,6 +17,7 @@ pub struct Env {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub enum LispFunction {
     Lambda(Rc<Sexp>, Env, Vec<String>), // the `Env` here is the local context of the function
+    VariadicLambda(Rc<Sexp>, Env),
     Intrinsic(intrinsics::MgIntrinsic)
 }
 
@@ -172,6 +173,21 @@ pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
                             eval(tmplt.as_ref(), &mut clos.compose(&nenv.into()))?
 
                         },
+
+                        &VariadicLambda(ref tmplt, ref clos) => {
+
+                            // Construct a list out of the arguments, ignoring length.
+                            let mut val = Rc::new(LispValue::Null);
+                            for v in v.iter().skip(1) {
+                                val = Rc::new(LispValue::Cons(eval(v, &mut env.clone())?, val));
+                            }
+
+                            // Create the eval override and then complete it.
+                            let mut arg = Env::new();
+                            arg.add_binding("args".into(), val); // Should we change the argument name?
+                            eval(tmplt.as_ref(), &mut clos.compose(&arg))?
+
+                        }
 
                         // Instrinsics are the things that actually reach out and do magic things.
                         &Intrinsic(ref idat) => {
