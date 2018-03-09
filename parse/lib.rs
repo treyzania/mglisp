@@ -50,6 +50,9 @@ fn lex(input: &String) -> Result<Vec<Token>, LexError> {
             v if is_name_char(v, true) => {
                 vec.push(read_name(&mut iter)?);
             },
+            '"' => {
+                vec.push(read_string(&mut iter)?);
+            }
             '#' => {
                 iter.next();
                 match iter.peek().cloned() {
@@ -128,6 +131,37 @@ fn read_name<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Token, 
 
 }
 
+fn read_string<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Token, LexError> {
+
+    let mut s = String::new();
+
+    // We want to skip the quote.
+    iter.next();
+
+    while let Some(&c) = iter.peek() {
+        match c {
+            '"' => break,
+            '\\' => {
+                iter.next();
+                s.push(match iter.peek() {
+                    Some(& 'n') => '\n',
+                    Some(& 'r') => '\r',
+                    Some(& '\\') => '\\',
+                    Some(& '"') => '"',
+                    Some(&c) => return Err(LexError::UnknownChar(c)),
+                    None => return Err(LexError::UnexpectedTermination)
+                })
+            },
+            '\n' | '\r' => return Err(LexError::UnknownChar(c)),
+            v => s.push(v)
+        }
+        iter.next();
+    }
+
+    Ok(Token::Str(s))
+
+}
+
 #[cfg(test)]
 pub mod tests {
 
@@ -147,6 +181,16 @@ pub mod tests {
         assert_eq!(n1, Ok(Token::Name(String::from("hello"))));
         let n2 = super::read_name(&mut String::from("a").chars().peekable());
         assert_eq!(n2, Ok(Token::Name(String::from("a"))));
+    }
+
+    #[test]
+    fn test_read_string() {
+        let s1 = super::read_string(&mut String::from("\"\"").chars().peekable());
+        assert_eq!(s1, Ok(Token::Str(String::from(""))));
+        let s2 = super::read_string(&mut String::from("\"foo\"").chars().peekable());
+        assert_eq!(s2, Ok(Token::Str(String::from("foo"))));
+        let s3 = super::read_string(&mut String::from("\" t \\r e \\n s \\\" t \\\\ s \"").chars().peekable());
+        assert_eq!(s3, Ok(Token::Str(String::from(" t \r e \n s \" t \\ s "))));
     }
 
 }
