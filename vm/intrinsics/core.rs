@@ -132,3 +132,33 @@ pub fn mgi_hard_clone(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, 
         eval(&args[0], env).map(|v| v.as_ref().hard_clone())
     }
 }
+
+#[inline]
+fn convert_sexp_to_lispvalue_literally(s: &Sexp) -> Rc<LispValue> {
+    use parser::sexp::Sexp::*;
+    Rc::new(match s {
+        &Null => LispValue::Null,
+        &Integer(i) => LispValue::Integer(i),
+        &ByteArray(ref a) => LispValue::ByteArray(a.clone()),
+        &Str(ref s) => LispValue::Str(s.clone()),
+        &Boolean(b) => LispValue::Boolean(b),
+        &Symbol(ref s) => LispValue::Symbol(s.clone()),
+        &List(ref l) => {
+            // Do some weird reverse-traversal to build up the list structure.
+            let mut c = Rc::new(LispValue::Null);
+            for i in 0..l.len() {
+                let iv = &l[l.len() - i - 1];
+                c = Rc::new(LispValue::Cons(convert_sexp_to_lispvalue_literally(iv), c));
+            }
+            return c; // Not pretty, but works.
+        }
+    })
+}
+
+pub fn mgi_quote(args: &Vec<Sexp>, _env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
+    if args.len() != 1 {
+        intrinsic_error("invalid form for quote, needs 1 expression")
+    } else {
+        Ok(convert_sexp_to_lispvalue_literally(&args[0]))
+    }
+}
