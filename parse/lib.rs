@@ -170,6 +170,36 @@ pub enum ParseError {
     UnexpectedTermination
 }
 
+pub fn parse<T: Iterator<Item = Token>>(iter: &mut Peekable<T>) -> Result<sexp::Sexp, ParseError> {
+    match iter.peek() {
+        Some(&Token::OpenParen) => {
+            let mut subs = Vec::new();
+            iter.next();
+            while let Some(tok) = iter.peek() {
+                match tok {
+                    &Token::CloseParen => break,
+                    _ => {
+                        subs.push(parse(iter)?);
+                        iter.next();
+                    }
+                }
+            }
+            Ok(sexp::Sexp::List(subs))
+        },
+        Some(&Token::Quote) => {
+            iter.next();
+            let sub = parse(iter)?;
+            Ok(sexp::Sexp::List(vec![sexp::Sexp::Symbol(String::from("quote")), sub]))
+        },
+        Some(&Token::Number(n)) => Ok(sexp::Sexp::Integer(n)),
+        Some(&Token::Name(ref s)) => Ok(sexp::Sexp::Symbol(s.clone())),
+        Some(&Token::Str(ref s)) => Ok(sexp::Sexp::Str(s.clone())),
+        Some(&Token::Bool(b)) => Ok(sexp::Sexp::Boolean(b)),
+        Some(&Token::CloseParen) => Err(ParseError::UnexpectedToken(Token::CloseParen)),
+        None => return Err(ParseError::UnexpectedTermination)
+    }
+}
+
 #[cfg(test)]
 pub mod tests {
 
