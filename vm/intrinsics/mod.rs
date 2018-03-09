@@ -1,5 +1,4 @@
 use std::rc::*;
-use std::sync::*;
 
 use parser::sexp::Sexp;
 

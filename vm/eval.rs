@@ -226,7 +226,6 @@ mod tests {
     use parser;
     use parser::sexp::Sexp::*;
     use super::{Env, LispFunction, LispValue};
-    use intrinsics;
 
     #[test]
     fn test_eval_nothing() {

@@ -14,13 +14,13 @@ use eval::LispValue::*;
 
 pub fn mgi_plus(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
-    if args.len() != 2 {
+    if args.len() != 3 {
         return intrinsic_error("invalid form for '+', needs 2 expressions");
     }
 
     // TODO Do these need to be cloned?
-    let av = eval(&args[0], &mut env.clone())?;
-    let bv = eval(&args[1], &mut env.clone())?;
+    let av = eval(&args[1], &mut env.clone())?;
+    let bv = eval(&args[2], &mut env.clone())?;
 
     match (av.as_ref(), bv.as_ref()) {
         (&Integer(a), &Integer(b)) => Ok(Rc::new(Integer(a + b))),
@@ -33,13 +33,13 @@ pub fn mgi_plus(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalEr
 
 pub fn mgi_subtract(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
-    if args.len() != 2 {
+    if args.len() != 3 {
         return intrinsic_error("invalid form for '-', needs 2 expressions");
     }
 
     // TODO Do these need to be cloned?
-    let av = eval(&args[0], &mut env.clone())?;
-    let bv = eval(&args[1], &mut env.clone())?;
+    let av = eval(&args[1], &mut env.clone())?;
+    let bv = eval(&args[2], &mut env.clone())?;
 
     match (av.as_ref(), bv.as_ref()) {
         (&Integer(a), &Integer(b)) => Ok(Rc::new(Integer(a - b))),
@@ -52,13 +52,13 @@ pub fn mgi_subtract(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, Ev
 
 pub fn mgi_multiply(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
-    if args.len() != 2 {
+    if args.len() != 3 {
         return intrinsic_error("invalid form for '*', needs 2 expressions");
     }
 
     // TODO Do these need to be cloned?
-    let av = eval(&args[0], &mut env.clone())?;
-    let bv = eval(&args[1], &mut env.clone())?;
+    let av = eval(&args[1], &mut env.clone())?;
+    let bv = eval(&args[2], &mut env.clone())?;
 
     match (av.as_ref(), bv.as_ref()) {
         (&Integer(a), &Integer(b)) => Ok(Rc::new(Integer(a * b))),
@@ -71,13 +71,13 @@ pub fn mgi_multiply(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, Ev
 
 pub fn mgi_divide(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
-    if args.len() != 2 {
+    if args.len() != 3 {
         return intrinsic_error("invalid form for '/', needs 2 expressions");
     }
 
     // TODO Do these need to be cloned?
-    let av = eval(&args[0], &mut env.clone())?;
-    let bv = eval(&args[1], &mut env.clone())?;
+    let av = eval(&args[1], &mut env.clone())?;
+    let bv = eval(&args[2], &mut env.clone())?;
 
     // TODO This will change eventually, since we're adding floating-point ops later.
     match (av.as_ref(), bv.as_ref()) {

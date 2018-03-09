@@ -14,12 +14,12 @@ use eval::LispValue::*;
 
 pub fn mgi_str_len(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
-    if args.len() != 1 {
+    if args.len() != 2 {
         return intrinsic_error("str-len takes 1 argument");
     }
 
     // TODO Does this need to be cloned?
-    match (eval(&args[0], &mut env.clone())?).as_ref() {
+    match (eval(&args[1], &mut env.clone())?).as_ref() {
         &Str(ref s) => Ok(Rc::new(Integer(s.len() as i64))),
         _ => intrinsic_error("argument to str-len must be str")
     }
@@ -28,13 +28,13 @@ pub fn mgi_str_len(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, Eva
 
 pub fn mgi_str_app(args: &Vec<Sexp>, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
-    if args.len() != 2 {
+    if args.len() != 3 {
         return intrinsic_error("str-app takes 2 arguments");
     }
 
     // TODO Do these need to be cloned?
-    let av = eval(&args[0], &mut env.clone())?;
-    let bv = eval(&args[1], &mut env.clone())?;
+    let av = eval(&args[1], &mut env.clone())?;
+    let bv = eval(&args[2], &mut env.clone())?;
 
     match (av.as_ref(), bv.as_ref()) {
         (&Str(ref a), &Str(ref b)) => Ok(Rc::new(Str({
