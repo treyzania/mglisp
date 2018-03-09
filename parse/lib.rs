@@ -1,6 +1,6 @@
 use std::iter::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 enum Token {
     Name(String),
     Str(String),
@@ -11,8 +11,26 @@ enum Token {
     CloseParen
 }
 
+#[derive(Clone, Eq, PartialEq, Debug)]
 enum LexError {
-    UnknownToken
+    UnknownChar(char),
+    UnexpectedTermination
+}
+
+#[inline]
+fn is_name_char(c: char, start: bool) -> bool {
+    // This function isn't that pretty.
+    if start {
+        match c {
+            'a'...'z' | 'A'...'Z' | '*' | '+' | '/' | '=' | '_' | '$' | '%' => true,
+            _ => false
+        }
+    } else {
+        match c {
+            'a'...'z' | 'A'...'Z' | '*' | '+' | '/' | '=' | '_' | '$' | '%' | '0'...'9' => true,
+            _ => false
+        }
+    }
 }
 
 /// Parses a vector of tokens.
@@ -29,15 +47,16 @@ fn lex(input: &String) -> Result<Vec<Token>, LexError> {
                 vec.push(read_number(&mut iter)?);
             },
             // We catch the `-` case above.
-            'a'...'z' | 'A'...'Z' | '*' | '+' | '/' | '=' | '_' | '$' | '%' => {
-                vec.push(Token::Name(read_name(&mut iter)?));
+            v if is_name_char(v, true) => {
+                vec.push(read_name(&mut iter)?);
             },
             '#' => {
                 iter.next();
                 match iter.peek().cloned() {
                     Some('t') => vec.push(Token::Bool(true)),
                     Some('f') => vec.push(Token::Bool(false)),
-                    _ => return Err(LexError::UnknownToken)
+                    Some(c) => return Err(LexError::UnknownChar(c)),
+                    _ => return Err(LexError::UnexpectedTermination)
                 }
             },
             '\'' => {
@@ -52,8 +71,8 @@ fn lex(input: &String) -> Result<Vec<Token>, LexError> {
                 iter.next();
                 vec.push(Token::CloseParen);
             }
-            ' ' | '\n' => { iter.next(); },
-            _ => return Err(LexError::UnknownToken)
+            ' ' | '\n' | '\r' => { iter.next(); },
+            c @ _ => return Err(LexError::UnknownChar(c))
         }
     }
 
@@ -70,7 +89,7 @@ fn read_number<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Token
         1
     };
 
-    if let Some(Ok(digit)) = iter.peek().map(|c| c.to_string().parse::<i64>()) {
+    if let Some(Ok(_)) = iter.peek().map(|c| c.to_string().parse::<i64>()) {
 
         // This is so hacky but so slick.
         let mut num = 0;
@@ -87,6 +106,47 @@ fn read_number<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Token
 
 }
 
-fn read_name<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<String, LexError> {
-    unimplemented!();
+fn read_name<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Token, LexError> {
+
+    let mut name = String::new();
+
+    // Push the first char, we know it's good.
+    name.push(*iter.peek().unwrap());
+    iter.next();
+
+    // Now we go over the rest of the rest of the input.
+    while let Some(&c) = iter.peek() {
+        if is_name_char(c, false) {
+            name.push(c);
+            iter.next();
+        } else {
+            return Err(LexError::UnknownChar(c));
+        }
+    }
+
+    Ok(Token::Name(name))
+
+}
+
+#[cfg(test)]
+pub mod tests {
+
+    use super::Token;
+
+    #[test]
+    fn test_read_numbers() {
+        let n1 = super::read_number(&mut String::from("12345").chars().peekable());
+        assert_eq!(n1, Ok(Token::Number(12345)));
+        let n2 = super::read_number(&mut String::from("-1337").chars().peekable());
+        assert_eq!(n2, Ok(Token::Number(-1337)));
+    }
+
+    #[test]
+    fn test_read_name() {
+        let n1 = super::read_name(&mut String::from("hello").chars().peekable());
+        assert_eq!(n1, Ok(Token::Name(String::from("hello"))));
+        let n2 = super::read_name(&mut String::from("a").chars().peekable());
+        assert_eq!(n2, Ok(Token::Name(String::from("a"))));
+    }
+
 }
