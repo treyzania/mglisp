@@ -8,7 +8,7 @@
 use std::rc::*;
 
 use eval::{LispValue, Env, eval, EvalError, LispFunction};
-use sexp::Sexp;
+use parser::sexp::Sexp;
 
 use intrinsics::*;
 

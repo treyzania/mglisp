@@ -27,3 +27,15 @@ pub enum Sexp {
     List(Vec<Sexp>),
 
 }
+
+impl Sexp {
+
+    pub fn symb_str(s: &str) -> Sexp {
+        Sexp::Symbol(String::from(s))
+    }
+
+    pub fn str_str(s: &str) -> Sexp {
+        Sexp::Str(String::from(s))
+    }
+
+}

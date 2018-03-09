@@ -1,7 +1,7 @@
 use std::rc::*;
 use std::sync::*;
 
-use sexp::Sexp;
+use parser::sexp::Sexp;
 
 use eval::LispValue;
 use eval::Env;

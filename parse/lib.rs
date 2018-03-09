@@ -171,13 +171,13 @@ pub enum ParseError {
 }
 
 pub fn parse<T: Iterator<Item = Token>>(iter: &mut Peekable<T>) -> Result<sexp::Sexp, ParseError> {
-    match iter.peek() {
-        Some(&Token::OpenParen) => {
+    match iter.peek().cloned() {
+        Some(Token::OpenParen) => {
             let mut subs = Vec::new();
             iter.next();
-            while let Some(tok) = iter.peek() {
+            while let Some(tok) = iter.peek().cloned() {
                 match tok {
-                    &Token::CloseParen => break,
+                    Token::CloseParen => break,
                     _ => {
                         subs.push(parse(iter)?);
                         iter.next();
@@ -186,16 +186,16 @@ pub fn parse<T: Iterator<Item = Token>>(iter: &mut Peekable<T>) -> Result<sexp::
             }
             Ok(sexp::Sexp::List(subs))
         },
-        Some(&Token::Quote) => {
+        Some(Token::Quote) => {
             iter.next();
             let sub = parse(iter)?;
             Ok(sexp::Sexp::List(vec![sexp::Sexp::Symbol(String::from("quote")), sub]))
         },
-        Some(&Token::Number(n)) => Ok(sexp::Sexp::Integer(n)),
-        Some(&Token::Name(ref s)) => Ok(sexp::Sexp::Symbol(s.clone())),
-        Some(&Token::Str(ref s)) => Ok(sexp::Sexp::Str(s.clone())),
-        Some(&Token::Bool(b)) => Ok(sexp::Sexp::Boolean(b)),
-        Some(&Token::CloseParen) => Err(ParseError::UnexpectedToken(Token::CloseParen)),
+        Some(Token::Number(n)) => Ok(sexp::Sexp::Integer(n)),
+        Some(Token::Name(ref s)) => Ok(sexp::Sexp::Symbol(s.clone())),
+        Some(Token::Str(ref s)) => Ok(sexp::Sexp::Str(s.clone())),
+        Some(Token::Bool(b)) => Ok(sexp::Sexp::Boolean(b)),
+        Some(Token::CloseParen) => Err(ParseError::UnexpectedToken(Token::CloseParen)),
         None => return Err(ParseError::UnexpectedTermination)
     }
 }
@@ -229,6 +229,30 @@ pub mod tests {
         assert_eq!(s2, Ok(Token::Str(String::from("foo"))));
         let s3 = super::read_string(&mut String::from("\" t \\r e \\n s \\\" t \\\\ s \"").chars().peekable());
         assert_eq!(s3, Ok(Token::Str(String::from(" t \r e \n s \" t \\ s "))));
+    }
+
+    #[test]
+    fn test_parse_list() {
+
+        use super::Token::*;
+        use sexp::Sexp;
+        let l = vec![OpenParen, Name(String::from("foo")), Str(String::from("bar")), CloseParen];
+        assert_eq!(
+            super::parse(&mut l.iter().cloned().peekable()),
+            Ok(Sexp::List(vec![Sexp::symb_str("foo"), Sexp::str_str("bar")])));
+
+    }
+
+    #[test]
+    fn test_parse_quote() {
+
+        use super::Token::*;
+        use sexp::Sexp;
+        let l = vec![Quote, OpenParen, Name(String::from("foo")), Str(String::from("bar")), CloseParen];
+        assert_eq!(
+            super::parse(&mut l.iter().cloned().peekable()),
+            Ok(Sexp::List(vec![Sexp::symb_str("quote"), Sexp::List(vec![Sexp::symb_str("foo"), Sexp::str_str("bar")])])));
+
     }
 
 }
