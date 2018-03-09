@@ -17,15 +17,15 @@ pub type IntrinsicImpl = Fn(&Vec<Sexp>, &mut Env) -> Result<Rc<LispValue>, EvalE
 #[derive(Clone)]
 pub struct MgIntrinsic {
     pub name: String,
-    pub func: Arc<IntrinsicImpl>
+    pub func: Rc<IntrinsicImpl>
 }
 
 impl MgIntrinsic {
     #[allow(unreachable_code)]
-    pub fn new(name: String, _func: &IntrinsicImpl) -> MgIntrinsic {
+    pub fn new(name: String, func: &'static IntrinsicImpl) -> MgIntrinsic {
         MgIntrinsic {
             name: name,
-            func: unimplemented!() // getting the &IntrinsicImpl in the arc as not a reference is hard, do it later
+            func: Rc::new(func)
         }
     }
 }

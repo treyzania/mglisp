@@ -237,8 +237,9 @@ mod tests {
     #[test]
     fn test_eval_math() {
         use parser::Token;
+        use parser::sexp::Sexp;
         use intrinsics::{self, MgIntrinsic};
-        let expr = parser::parse(&mut vec![
+        let expr: Sexp = parser::parse(&mut vec![
             Token::OpenParen,
             Token::Name("+".into()),
             Token::OpenParen,
@@ -249,6 +250,7 @@ mod tests {
             Token::Number(2),
             Token::CloseParen
             ].iter().cloned().peekable()).unwrap();
+        println!("{:?}", expr);
         let mut env = Env::new();
         env.add_binding("+".into(), Rc::new(LispValue::Func(Box::new(LispFunction::Intrinsic(MgIntrinsic::new("+".into(), &intrinsics::math::mgi_plus))))));
         let r = super::eval(&expr, &mut env);

@@ -35,7 +35,7 @@ impl LispProgram {
             .with_function("deepcopy", &intrinsics::core::mgi_hard_clone)
     }
 
-    fn with_function(mut self, name: &str, func: &IntrinsicImpl) -> LispProgram {
+    fn with_function(mut self, name: &str, func: &'static IntrinsicImpl) -> LispProgram {
         self.env.insert(
             String::from(name),
             Rc::new(LispValue::Func(Box::new(LispFunction::Intrinsic(MgIntrinsic::new(String::from(name), func))))));
