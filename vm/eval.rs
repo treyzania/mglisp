@@ -218,3 +218,41 @@ pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
     Ok(val)
 
 }
+
+#[cfg(test)]
+mod tests {
+
+    use std::rc::Rc;
+    use parser;
+    use parser::sexp::Sexp::*;
+    use super::{Env, LispFunction, LispValue};
+    use intrinsics;
+
+    #[test]
+    fn test_eval_nothing() {
+        let r = super::eval(&Null, &mut Env::new());
+        assert_eq!(r.unwrap(), Rc::new(LispValue::Null));
+    }
+
+    #[test]
+    fn test_eval_math() {
+        use parser::Token;
+        use intrinsics::{self, MgIntrinsic};
+        let expr = parser::parse(&mut vec![
+            Token::OpenParen,
+            Token::Name("+".into()),
+            Token::OpenParen,
+            Token::Name("+".into()),
+            Token::Number(2),
+            Token::Number(3),
+            Token::CloseParen,
+            Token::Number(2),
+            Token::CloseParen
+            ].iter().cloned().peekable()).unwrap();
+        let mut env = Env::new();
+        env.add_binding("+".into(), Rc::new(LispValue::Func(Box::new(LispFunction::Intrinsic(MgIntrinsic::new("+".into(), &intrinsics::math::mgi_plus))))));
+        let r = super::eval(&expr, &mut env);
+        assert_eq!(r.unwrap(), Rc::new(LispValue::Integer(7)));
+    }
+
+}
