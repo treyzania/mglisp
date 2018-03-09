@@ -1,7 +1,9 @@
 use std::iter::*;
 
+pub mod sexp;
+
 #[derive(Clone, Eq, PartialEq, Debug)]
-enum Token {
+pub enum Token {
     Name(String),
     Str(String),
     Number(i64),
@@ -12,7 +14,7 @@ enum Token {
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
-enum LexError {
+pub enum LexError {
     UnknownChar(char),
     UnexpectedTermination
 }
@@ -36,7 +38,7 @@ fn is_name_char(c: char, start: bool) -> bool {
 /// Parses a vector of tokens.
 ///
 /// A lot of this is stolen from https://adriann.github.io/rust_parser.html.
-fn lex(input: &String) -> Result<Vec<Token>, LexError> {
+pub fn lex(input: &String) -> Result<Vec<Token>, LexError> {
 
     let mut vec = Vec::new();
     let mut iter = input.chars().peekable();
@@ -160,6 +162,12 @@ fn read_string<T: Iterator<Item = char>>(iter: &mut Peekable<T>) -> Result<Token
 
     Ok(Token::Str(s))
 
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub enum ParseError {
+    UnexpectedToken(Token),
+    UnexpectedTermination
 }
 
 #[cfg(test)]

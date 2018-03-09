@@ -5,3 +5,6 @@ authors = ["treyzania <treyzania@gmail.com>"]
 
 [lib]
 path = "lib.rs"
+
+[dependencies]
+mglisp-parser = { path = "../parse" }

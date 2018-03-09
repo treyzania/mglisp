@@ -7,7 +7,7 @@ use std::collections::*;
 
 use eval;
 use eval::{LispValue, LispFunction};
-use sexp;
+use parser::sexp;
 use intrinsics::{self, MgIntrinsic, IntrinsicImpl};
 
 #[derive(Clone)]

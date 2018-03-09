@@ -5,7 +5,7 @@ use std::rc::*;
 use std::collections::*;
 
 use intrinsics;
-use sexp::Sexp;
+use parser::sexp::Sexp;
 
 type BindingMap = HashMap<String, Rc<LispValue>>;
 
@@ -113,7 +113,7 @@ pub enum EvalError {
 #[allow(unreachable_patterns)]
 pub fn eval(sexp: &Sexp, env: &mut Env) -> Result<Rc<LispValue>, EvalError> {
 
-    use sexp::Sexp::*;
+    use parser::sexp::Sexp::*;
     use self::LispFunction::*;
     use self::EvalError::*;
     let val: Rc<LispValue> = match sexp {
